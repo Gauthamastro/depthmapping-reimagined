@@ -26,3 +26,4 @@ auto_enc_dec_model.summary()
 #do some intial training of the auto_enc_dec_model 
 # then iteratively train the conv_model taking encoder output as label, then the auto_enc_dec_model to give better encoding
 # can also exchange weights if stable training is needed
+#also need to change the structure of decoder to take a image input as a reference for better segmnetation
