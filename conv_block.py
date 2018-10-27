@@ -36,7 +36,7 @@ def conv_block(input_layer):
 
 	return conv5
 
-
+"""
 img_width,img_height = 1024,1024
 
 img_input = Input(shape=(img_width, img_height, 3))
@@ -51,3 +51,4 @@ model.summary()
 
 layer_dict = dict([(layer.name, layer) for layer in model.layers])
 print([layer.name for layer in model.layers])
+"""
