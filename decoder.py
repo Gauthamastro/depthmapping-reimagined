@@ -1,9 +1,10 @@
 from keras.models import Sequential, Model 
 from keras.layers import Input,SeparableConv2D,MaxPooling2D,BatchNormalization,Conv2DTranspose,Dropout,Conv2D
+import conv_block
 
-
-def decoder_block(input_layer):
-	up1 = Conv2DTranspose(256,(2,2),strides=(2,2),padding='same')(input_layer)
+def decoder_block(input_image):
+	encoded_image=conv_block(input_image)
+	up1 = Conv2DTranspose(256,(2,2),strides=(2,2),padding='same')(encoded_image)
 	conv1 = Conv2D(256,(3,3),activation='relu',padding='same')(up1)
 	conv1 = BatchNormalization()(conv1)
 	conv1 = SeparableConv2D(256, (3, 3), activation='relu', padding='same')(conv1)
@@ -36,9 +37,10 @@ def decoder_block(input_layer):
 
 	return conv4
 
-
+"""
 input_layer = Input(shape=(64, 64, 512))
 
 model = Model(input = input_layer, output = decoder_block(input_layer))
 
 model.summary()
+"""
