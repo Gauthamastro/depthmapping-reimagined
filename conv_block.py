@@ -36,7 +36,7 @@ def conv_block(input_layer):
 
 	return conv5
 
-"""
+'''
 img_width,img_height = 1024,1024
 
 img_input = Input(shape=(img_width, img_height, 3))
@@ -45,10 +45,9 @@ model = Model(input = img_input, output = conv_block(img_input))
 
 model.summary()
 
-
 #This conv5 feature map is feed as the label to encoder
 
 
 layer_dict = dict([(layer.name, layer) for layer in model.layers])
 print([layer.name for layer in model.layers])
-"""
+'''

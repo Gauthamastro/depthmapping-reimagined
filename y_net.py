@@ -1,6 +1,7 @@
-import conv_block
-import decoder
-
+from conv_block import *
+from decoder import *
+from keras.layers import Input
+from keras.models import Model
 
 
 
@@ -15,7 +16,7 @@ conv_model.summary()
 
 auto_enc_dec_model = Model(input = img_input, output = decoder_block(img_input))
 
-auto_enc_dec_model.summary()
+#auto_enc_dec_model.summary()
 
 
 

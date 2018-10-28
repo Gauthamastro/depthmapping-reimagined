@@ -1,6 +1,6 @@
 from keras.models import Sequential, Model 
 from keras.layers import Input,SeparableConv2D,MaxPooling2D,BatchNormalization,Conv2DTranspose,Dropout,Conv2D
-import conv_block
+from conv_block import *
 
 def decoder_block(input_image):
 	encoded_image=conv_block(input_image)
@@ -37,10 +37,10 @@ def decoder_block(input_image):
 
 	return conv4
 
-"""
+'''
 input_layer = Input(shape=(64, 64, 512))
 
 model = Model(input = input_layer, output = decoder_block(input_layer))
 
 model.summary()
-"""
+'''
