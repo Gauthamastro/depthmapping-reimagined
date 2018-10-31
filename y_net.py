@@ -98,16 +98,16 @@ def training_enc_dec(epochs,batch_size,disparity_map_val,disparity_map):
         callbacks=callbacks_list)
 
 
-def conv_enc(batch_size,epochs,val_x,val_y,img_input,disparity_map):
-	disparity_map= Input((img_width,img_height,3))
+def conv_enc(batch_size,epochs,val_x,val_y,img_input,disparity_map,weights_file):
+	disparity_map= Input((img_width,img_height,1))
 	center_feature_vector = encoder_block(disparity_map)
 	encoder_model = Model(input=disparity_map,output=center_feature_vector)
-	encoder_model.load_weights('path to weights file',by_name=True)
+	encoder_model.load_weights(weights_file,by_name=True)
 	feature_maps = encoder_model.predict(disparity_map)
 	img_input_layer= Input((img_width,img_height,3))
 	conv_model_layer = conv_block(img_input_layer)
 	#Disparity_map and img_put should have same number of samples
-	conv_model = Model(input=img_input,output=conv_model_layer)
+	conv_model = Model(input=disparity_map,output=conv_model_layer)
 	conv_model.compile(loss=kullback_leibler_divergence,optimizer='adam',metrics=['accuracy'])
 	#Checkpoints
 	filepath="weights-improvement-enc_conv-{epoch:02d}-{val_acc:.2f}.hdf5"
@@ -123,7 +123,8 @@ def conv_enc(batch_size,epochs,val_x,val_y,img_input,disparity_map):
 
 
 
-training_enc_dec(10,8,np.array(y_val),np.array(y_train))
+#training_enc_dec(10,8,np.array(y_val),np.array(y_train))
+conv_enc(8,10,np.array(X_val),np.array(y_val),np.array(X_train),np.array(y_train),'weights-improvement-enc_dec-02-0.00.hdf5')
 
 
 
