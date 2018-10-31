@@ -8,7 +8,7 @@ from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint
 import numpy as np
 
-img_width,img_height = 440,800
+img_width,img_height = 320,240
 
 img_input = Input(shape=(img_width, img_height, 3))#RGB image
 dis_input = Input(shape=(img_width,img_height,1))#Disparity image
@@ -31,20 +31,29 @@ a.sort()
 rgb = []
 for i in a:
 	d = cv2.imread(train_rgb_folder+i)
+	d = cv2.resize(d,(img_width,img_height))
+	print(d.shape)
 	d = cv2.cvtColor(d, cv2.COLOR_RGB2GRAY)
+	print(d.shape)
+	d=d.ravel()
+	d=np.resize(d,(img_width,img_height,1))
 	rgb.append(d)
+	print(d.shape)
 print(len(a))
 depth = []#np.load('depth.npy')
 for i in a:
 	d = cv2.imread(train_rgb_folder+i)
+	d = cv2.resize(d,(img_width,img_height))
 	d = cv2.cvtColor(d, cv2.COLOR_RGB2GRAY)
+	d=d.ravel()
+	d=np.resize(d,(img_width,img_height,1))
 	depth.append(d)
 
 from sklearn.model_selection import train_test_split
-
 X_train, X_test, y_train, y_test = train_test_split(rgb, depth, test_size=0.2, random_state=1)
 
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=1)
+print(X_train[0].shape)
 
 #conv_model = Model(input = img_input, output = conv_block(img_input))
 #conv_model.summary()
@@ -74,7 +83,7 @@ def training_enc_dec(epochs,batch_size,disparity_map_val,disparity_map):
 
 	auto_enc_dec_model = Model(input= depth_input_layer,output=final_disparity_map)
 	auto_enc_dec_model.compile(loss=kullback_leibler_divergence,optimizer='adam',metrics=['accuracy'])
-	#auto_enc_dec_model.summary()
+	auto_enc_dec_model.summary()
 	# checkpoint
 	filepath="weights-improvement-enc_dec-{epoch:02d}-{val_acc:.2f}.hdf5"
 	checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
@@ -90,7 +99,7 @@ def training_enc_dec(epochs,batch_size,disparity_map_val,disparity_map):
 
 
 def conv_enc(batch_size,epochs,val_x,val_y,img_input,disparity_map):
-	disparity_map= Input((img_width,img_height,1))
+	disparity_map= Input((img_width,img_height,3))
 	center_feature_vector = encoder_block(disparity_map)
 	encoder_model = Model(input=disparity_map,output=center_feature_vector)
 	encoder_model.load_weights('path to weights file',by_name=True)
@@ -114,7 +123,7 @@ def conv_enc(batch_size,epochs,val_x,val_y,img_input,disparity_map):
 
 
 
-training_enc_dec(32,10,np.array([y_val]),np.array([y_train]))
+training_enc_dec(10,8,np.array(y_val),np.array(y_train))
 
 
 
