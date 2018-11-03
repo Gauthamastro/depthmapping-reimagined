@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import cv2
 
-(img_height,img_width,channels)=(480, 640, 3)
+(img_height,img_width,channels)=(100,100, 3)
 # use xavier initialliser and conv2d_transpose
 observationsx=tf.placeholder(shape=[None,img_width,img_height,channels],dtype=tf.float32,name='observations')
 
@@ -80,7 +80,7 @@ dl4=tf.nn.relu(dl4)
 
 dl5=tf.add(tf.nn.conv2d_transpose(dl4,dw1,output_shape=[-1,img_height,img_width,1],strides=[1,1,1,1],padding='SAME'),db1)
 
-output_image=tf.nn.relu(dl5)#find a better activation here
+output_image=tf.nn.relu(dl5)   #find a better activation here
 
 #loss=
 
@@ -88,11 +88,16 @@ output_image=tf.nn.relu(dl5)#find a better activation here
 
 with tf.Session() as sess:
 	tf.initialize_all_variables().run()
-	input_img=cv2.imread(path="/home/akash/Desktop/my_car/real_data/f(0).jpg")
-	
+	input_img=cv2.imread("/home/akash/Desktop/my_car/real_data/f(0).jpg")
+	input_img= cv2.resize(input_img,(100,100))
 	print np.shape(input_img)
-	
-	output=sess.run(output_image,feed_dict={observationsx:[input_img]})
-
+	output=sess.run(dl4,feed_dict={observationsx:[input_img]})
+	print output
+	print np.shape(output)
+	#output=sess.run(output_image,feed_dict={observationsx:[input_img]})
+"""
 input_img=cv2.imread("/home/akash/Desktop/my_car/real_data/f(0).jpg")
 print np.shape(input_img)#(480, 640, 3)
+input_img= cv2.resize(input_img,(100,100))
+print np.shape(input_img)
+"""
