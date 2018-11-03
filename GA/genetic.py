@@ -1,5 +1,5 @@
 import random
-from keras.layers import Conv2D,Separable2D,Conv2DTranspose,UpSampling2D,Dense,Dropout,SpatialDropout2D,Concatenate,Add
+from keras.layers import Conv2D,SeparableConv2D,Conv2DTranspose,UpSampling2D,Dense,Dropout,SpatialDropout2D,Concatenate,Add
 
 seed =34
 random.seed(34)
@@ -67,10 +67,6 @@ class dense_layers:
 		return self.layer
 
 class merge_layers:
-	def CON(self,input_list):
-		self.layer = Concatenate(axis=-1)(input_list)
-		return self.layer
-
 	def ADD(self,input_list):
 		self.layer = Add()(input_list)
 		return self.layer
@@ -106,19 +102,19 @@ class pooling_layers:
 		self.padding_list = ['same','valid']
 		self.data_format_list = ['channels_last','channels_first']
 
-	def MaxPooling2D_layer(self,pool_size=(2, 2), strides=None, padding='valid', data_format=None,input_layer):
+	def MaxPooling2D_layer(self,input_layer,pool_size=(2, 2), strides=None, padding='valid', data_format=None):
 		self.layer = MaxPooling2D(pool_size=pool_size, strides=strides, padding=padding, data_format=data_format)(input_layer)
 		return self.layer
 
-	def AveragePooling2D_layer(self,pool_size=(2, 2), strides=None, padding='valid', data_format=None,input_layer):
+	def AveragePooling2D_layer(self,input_layer,pool_size=(2, 2), strides=None, padding='valid', data_format=None):
 		self.layer = AveragePooling2D(pool_size=pool_size, strides=strides, padding=padding, data_format=data_format)(input_layer)
 		return self.layer
 	
-	def GloblalMaxPooling2D_layer(self,pool_size=(2, 2), strides=None, padding='valid', data_format=None,input_layer):
+	def GloblalMaxPooling2D_layer(self,input_layer,pool_size=(2, 2), strides=None, padding='valid', data_format=None):
 		self.layer = GlobalMaxPooling2D(pool_size=pool_size, strides=strides, padding=padding, data_format=data_format)(input_layer)
 		return self.layer
 	
-	def GlobalAveragePooling2D_layer(self,pool_size=(2, 2), strides=None, padding='valid', data_format=None,input_layer):
+	def GlobalAveragePooling2D_layer(self,input_layer,pool_size=(2, 2), strides=None, padding='valid', data_format=None):
 		self.layer = GlobalAveragePooling2D(pool_size=pool_size, strides=strides, padding=padding, data_format=data_format)(input_layer)
 		return self.layer
 
@@ -133,21 +129,20 @@ class normalization:
 	
 
 class GA:
-	def __init__(self,max_conv_layers,max_convT_layers,max_skip_connections,input_shape,activations):
+	def __init__(self,max_conv_layers,max_convT_layers,max_skip_connections,input_shape):
 		self.special_conv_layers = ['Conv2D','Separable2D']
 		self.special_convT_layers =['Conv2DTranspose','UpSampling2D']
 		self.drop_layers = ['Dropout','SpatialDropout2D']#No 1
-		self.merge_layers = ['Concatenate','Add']
+		self.merge_layers = ['Add']
 		self.activations = ['softmax','relu','LeakyReLU','PReLU','ELU','ThresoldedReLU']
 		self.pooling_layers = ['MaxPooling2D','AveragePooling2D','GlobalMaxPooling2D','GlobalAveragePooling2D']#No 2
 		self.normalization = ['BatchNormalization'] #No 3
-		self.dense_layers = ['Dense']
+		self.dense_layer = ['Dense']
 
 		self.max_conv_layers=max_conv_layers
 		self.max_convT_layers=max_convT_layers
 		self.max_skip_connections=max_skip_connections
-		self.input_shape = input_shape
-		self.activations = activations
+		self.input_shape = input_shape	
 
 
 
@@ -156,10 +151,9 @@ class GA:
 
 
 		self.genome = []
-		self.genome.append('input_layer')
 
 		for i in range(self.max_conv_layers):
-			self.a = ('special_conv_layers')
+			self.a = ['special_conv_layers']
 			if random.randint(0,1):
 				self.a.append('BatchNormalization_layer')
 			if random.randint(0,1):
@@ -169,10 +163,25 @@ class GA:
 
 			self.genome.append(self.a)
 
-		for i in range(self.max_convT_layers):
-			self.genome.append('special_convT_layers')
+		for j in range(self.max_convT_layers):
+			self.a = ['special_convT_layers']
+			if random.randint(0,1):
+				self.a.append('BatchNormalization_layer')
+			if random.randint(0,1):
+				self.a.append('pooling_layers')
+			if random.randint(0,1):
+				self.a.append('drop_layers')
 
-		return self.genome
+			self.genome.append(self.a)
+
+		random.shuffle(self.genome)
+		self.genome.insert(0,'input_layer')
+		self.genome.append('dense_layer')
+
+		for i in self.genome:# for debugging only
+			print(i) # for debugging only
+
+		return self.genome 
 
 
 
@@ -180,20 +189,11 @@ class GA:
 
 	def decode_genome(self,genome):
 		#genome is a list of layers and their params
-		for gene in genome:
-			if gene[0] in self.special_conv_layers:
-				pass
-			elif gene[0] in self.special_convT_layers:
-				pass
-			elif gene[0] in self.special_layers:
-				pass
-			elif gene[0] in self.core_layers:
-				pass
-			elif gene[0] in self.merge_layers:
-				pass
-			elif gene[0] in self.activations:
-				pass
-			elif gene[0] in self.pooling_layers:
-				pass
-			elif gene[0] in self.normalization:
-				pass
+
+		for i in range(len(genome)):
+			for j in range(len(genome[i])):
+				
+
+
+a = GA(5,3,0,(100,100,3),)
+a.init_genome()
