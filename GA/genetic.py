@@ -189,38 +189,38 @@ class GA:
 				if self.genome[i][j] == 'special_conv_layers':
 					if random.randint(0,1):
 						self.genome[i][j] ='Conv2D'
-						break
+					
 					else:
 						self.genome[i][j] = 'SeparableConv2D'
-						break
+					
 				if self.genome[i][j] == 'special_convT_layers':
 					if random.randint(0,1):
 						self.genome[i][j] ='Conv2DTranspose'
-						break
+					
 					else:
 						self.genome[i][j] = 'UpSampling2D'
-						break
+					
 				if self.genome[i][j] == 'pooling_layers':
 					k  = random.randint(1,4)
 					if k == 1:
 						self.genome[i][j] ='MaxPooling2D'
-						break
+					
 					if k == 2:
 						self.genome[i][j] = 'GlobalMaxPooling2D'
-						break
+					
 					if k == 3:
 						self.genome[i][j] = 'AveragePooling2D'
-						break
+					
 					if k == 4:
 						self.genome[i][j] = 'GlobalAveragePooling2D'
-						break
+					
 				if self.genome[i][j] == 'drop_layers':
 					if random.randint(0,1):
 						self.genome[i][j] = 'Dropout'
-						break
+					
 					else:
 						self.genome[i][j] = 'SpatialDropout2D'
-						break
+					
 
 		for i in self.genome:#For debugging
 			print(i)  #for debugging
@@ -239,5 +239,5 @@ class GA:
 
 
 
-a = GA(5,3,0,(100,100,3),)
+a = GA(15,10,0,(100,100,3),)
 a.init_genome()
