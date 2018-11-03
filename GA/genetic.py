@@ -130,7 +130,7 @@ class normalization:
 
 class GA:
 	def __init__(self,max_conv_layers,max_convT_layers,max_skip_connections,input_shape):
-		self.special_conv_layers = ['Conv2D','Separable2D']
+		self.special_conv_layers = ['Conv2D','SeparableConv2D']
 		self.special_convT_layers =['Conv2DTranspose','UpSampling2D']
 		self.drop_layers = ['Dropout','SpatialDropout2D']#No 1
 		self.merge_layers = ['Add']
@@ -166,7 +166,7 @@ class GA:
 		for j in range(self.max_convT_layers):
 			self.a = ['special_convT_layers']
 			if random.randint(0,1):
-				self.a.append('BatchNormalization_layer')
+				self.a.append('BatchNormalization')
 			if random.randint(0,1):
 				self.a.append('pooling_layers')
 			if random.randint(0,1):
@@ -175,11 +175,55 @@ class GA:
 			self.genome.append(self.a)
 
 		random.shuffle(self.genome)
-		self.genome.insert(0,'input_layer')
-		self.genome.append('dense_layer')
+		self.genome.insert(0,['input_layer'])
+		self.genome.append(['dense_layer'])
 
 		for i in self.genome:# for debugging only
 			print(i) # for debugging only
+		print('\n')
+		print('\n')
+
+
+		for i in range(len(self.genome)):
+			for j in range(len(self.genome[i])):
+				if self.genome[i][j] == 'special_conv_layers':
+					if random.randint(0,1):
+						self.genome[i][j] ='Conv2D'
+						break
+					else:
+						self.genome[i][j] = 'SeparableConv2D'
+						break
+				if self.genome[i][j] == 'special_convT_layers':
+					if random.randint(0,1):
+						self.genome[i][j] ='Conv2DTranspose'
+						break
+					else:
+						self.genome[i][j] = 'UpSampling2D'
+						break
+				if self.genome[i][j] == 'pooling_layers':
+					k  = random.randint(1,4)
+					if k == 1:
+						self.genome[i][j] ='MaxPooling2D'
+						break
+					if k == 2:
+						self.genome[i][j] = 'GlobalMaxPooling2D'
+						break
+					if k == 3:
+						self.genome[i][j] = 'AveragePooling2D'
+						break
+					if k == 4:
+						self.genome[i][j] = 'GlobalAveragePooling2D'
+						break
+				if self.genome[i][j] == 'drop_layers':
+					if random.randint(0,1):
+						self.genome[i][j] = 'Dropout'
+						break
+					else:
+						self.genome[i][j] = 'SpatialDropout2D'
+						break
+
+		for i in self.genome:#For debugging
+			print(i)  #for debugging
 
 		return self.genome 
 
@@ -189,10 +233,10 @@ class GA:
 
 	def decode_genome(self,genome):
 		#genome is a list of layers and their params
+		pass
 
-		for i in range(len(genome)):
-			for j in range(len(genome[i])):
-				
+
+
 
 
 a = GA(5,3,0,(100,100,3),)
