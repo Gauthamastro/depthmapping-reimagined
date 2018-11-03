@@ -9,6 +9,14 @@ random.seed(34)
 
 
 class conv_layers:
+	def __init__(self):
+		self.output_filter_depth_list = [2,4,16,32,64,128,256,512,1024] # assumeing channels last
+		self.kernel_size_list = [1,3,5,7,9,11]
+		self.strides_list = [1,2,3,4,5]
+		self.padding_list = ['same','valid']
+		self.data_format = ['channels_last','channels_first']
+
+
 	def C2D(self,filters,kernel_size,strides,padding,data_format,activation):
 		self.layer = Conv2D(filters,kernel_size, strides=strides,
 							padding=padding, data_format=data_format, activation=activation)
@@ -21,6 +29,13 @@ class conv_layers:
 
 
 class convT_layers:
+	def __init__(self):
+		self.output_filter_depth_list = [2,4,16,32,64,128,256,512,1024] # assumeing channels last
+		self.kernel_size_list = [1,3,5,7,9,11]
+		self.strides_list = [1,2,3,4,5]
+		self.padding_list = ['same','valid']
+		self.data_format = ['channels_last','channels_first']
+
 	def C2DT(self,filters,kernel_size,strides,padding,data_format,activation):
 		self.layer=keras.layers.Conv2DTranspose(filters, kernel_size, strides=strides, 
 												padding=padding, output_padding=None, data_format=data_format,activation=activation)
@@ -31,6 +46,10 @@ class convT_layers:
 												 padding=padding, output_padding=None, data_format=data_format,activation=activation)
 		return self.layer
 class core_layers :
+	def __init__(self):
+		self.data_format_list = ['channels_last','channels_first']
+		self.droputout_rate_list = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,]
+
 	def D(self,activation):
 		self.layer = Dense(units, activation=activation)
 		return self.layer
@@ -51,10 +70,10 @@ class merge_layers:
 	def ADD(self,input_list):
 		self.layer = Add()(input_list)
 		return self.layer
+
 class activations:
-	def softmax_act(self,layer):
-		self.layer = Softmax(axis=-1)(layer)
-		return self.layer
+	def __init__(self):
+		self.alpha_list = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 
 	def LeakyReLU_act(self,layer,alpha=0.3):
 		self.layer = LeakyReLU(alpha=0.3)(layer)
@@ -75,7 +94,14 @@ class activations:
 	def relu_act(self,layer,max_value=None, negative_slope=0.0, threshold=0.0):
 		self.layer = ReLU(max_value,negative_slope,threshold)(layer)
 		return self.layer
+
 class pooling_layers:
+	def __init__(self):
+		self.pool_size_list = [1,2,3,4,5]
+		self.strides_list = [1,2,3,4,5]
+		self.padding_list = ['same','valid']
+		self.data_format_list = ['channels_last','channels_first']
+
 	def MaxPooling2D_layer(self,pool_size=(2, 2), strides=None, padding='valid', data_format=None,input_layer):
 		self.layer = MaxPooling2D(pool_size=pool_size, strides=strides, padding=padding, data_format=data_format)(input_layer)
 		return self.layer
@@ -93,13 +119,17 @@ class pooling_layers:
 		return self.layer
 
 class normalization:
-	def BatchNormalization_layer():
-		self.layer = 
+	def __init__(self):
+		self.momentum_list = [0.9,0.99,0.999]
+		self.epsilon_list = [0.001,0.01,0.1]
+
+	def BatchNormalization_layer(axis,momentum,epsilon):
+		self.layer = keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001) #axis is done by assuming channels last
 		return self.layer
 	
 
 class GA:
-	def __init__(self,max_conv_layers,max_convT_layers,max_skip_connections,input_shape,activations,normalization):
+	def __init__(self,max_conv_layers,max_convT_layers,max_skip_connections,input_shape,activations):
 		self.special_conv_layers = ['Conv2D','Separable2D']
 		self.special_convT_layers =['Conv2DTranspose','UpSampling2D']
 		self.core_layers = ['Dense','Dropout','SpatialDropout2D']
@@ -113,8 +143,6 @@ class GA:
 		self.max_skip_connections=max_skip_connections
 		self.input_shape = input_shape
 		self.activations = activations
-		self.normalization= normalization
-
 
 
 
@@ -122,7 +150,18 @@ class GA:
 	def init_genome(self):
 
 
-		gene = []
+		self.genome = []
+		self.genome.append('input_layer')
+		
+		for i in range(self.max_conv_layers):
+			if random.randint(0,1):
+				self.genome.append(('special_conv_layers','BatchNormalization_layer'))
+			else:
+				self.genome.append('special_conv_layers')
+
+		for i in range(self.max_convT_layers):
+			self.genome.append('special_convT_layers')
+
 
 
 
