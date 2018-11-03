@@ -45,14 +45,10 @@ class convT_layers:
 		self.layer=UpSampling2D(filters, kernel_size, strides=strides,
 												 padding=padding, output_padding=None, data_format=data_format,activation=activation)
 		return self.layer
-class core_layers :
+class drop_layers :
 	def __init__(self):
 		self.data_format_list = ['channels_last','channels_first']
 		self.droputout_rate_list = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,]
-
-	def D(self,activation):
-		self.layer = Dense(units, activation=activation)
-		return self.layer
 
 	def DO(self,rate):
 		self.layer = Dropout(rate,seed =seed)
@@ -60,6 +56,14 @@ class core_layers :
 
 	def SDO(self,rate,data_format):
 		self.layer =  SpatialDropout2D(rate, data_format=data_format)
+		return self.layer
+
+class dense_layers:
+	def __init__(self):
+		self.units = [2,4,16,32,64,128,256,512,1024,2048]
+
+	def D(self,units,activation):
+		self.layer = Dense(units, activation=activation)
 		return self.layer
 
 class merge_layers:
@@ -132,11 +136,12 @@ class GA:
 	def __init__(self,max_conv_layers,max_convT_layers,max_skip_connections,input_shape,activations):
 		self.special_conv_layers = ['Conv2D','Separable2D']
 		self.special_convT_layers =['Conv2DTranspose','UpSampling2D']
-		self.core_layers = ['Dense','Dropout','SpatialDropout2D']
+		self.drop_layers = ['Dropout','SpatialDropout2D']#No 1
 		self.merge_layers = ['Concatenate','Add']
 		self.activations = ['softmax','relu','LeakyReLU','PReLU','ELU','ThresoldedReLU']
-		self.pooling_layers = ['MaxPooling2D','AveragePooling2D','GlobalMaxPooling2D','GlobalAveragePooling2D']
-		self.normalization = ['BatchNormalization']
+		self.pooling_layers = ['MaxPooling2D','AveragePooling2D','GlobalMaxPooling2D','GlobalAveragePooling2D']#No 2
+		self.normalization = ['BatchNormalization'] #No 3
+		self.dense_layers = ['Dense']
 
 		self.max_conv_layers=max_conv_layers
 		self.max_convT_layers=max_convT_layers
@@ -152,17 +157,22 @@ class GA:
 
 		self.genome = []
 		self.genome.append('input_layer')
-		
+
 		for i in range(self.max_conv_layers):
+			self.a = ('special_conv_layers')
 			if random.randint(0,1):
-				self.genome.append(('special_conv_layers','BatchNormalization_layer'))
-			else:
-				self.genome.append('special_conv_layers')
+				self.a.append('BatchNormalization_layer')
+			if random.randint(0,1):
+				self.a.append('pooling_layers')
+			if random.randint(0,1):
+				self.a.append('drop_layers')
+
+			self.genome.append(self.a)
 
 		for i in range(self.max_convT_layers):
 			self.genome.append('special_convT_layers')
 
-
+		return self.genome
 
 
 
