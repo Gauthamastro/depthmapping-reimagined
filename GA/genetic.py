@@ -1,4 +1,5 @@
 import random,math
+from random import shuffle
 from keras.layers import Conv2D,SeparableConv2D,Conv2DTranspose,UpSampling2D,Dense,Dropout,SpatialDropout2D,Concatenate,Add
 from keras.models import Sequential,Model
 from keras.layers import Input,BatchNormalization,AveragePooling2D,GlobalMaxPooling2D,MaxPooling2D,GlobalAveragePooling2D
@@ -249,12 +250,11 @@ class GA:
 		return self.crossed_breeds
 
 
-	def best_params(best_5):
-		for i in best_5:
-			for j in i:
-				for k in j:
-					for p in k:
-						pass
+	def best_params(self,best_5):
+		pass
+
+					
+					
 
 
 
@@ -262,22 +262,100 @@ class GA:
 	def mutation(self,next_best_5):
 		#here the best 5 means next 5 after top 2 
 		# ie from 3rd to 7th best model
-		next_best_5.shuffle()
+		shuffle(next_best_5)
 		self.genome_1 = next_best_5[0]
 		self.genome_2 = next_best_5[1]
 
+		#Code for the 20th person!
+		self.mutated_layer_num = random.randint(0,len(self.genome_2))
+		self.mutated_layer = self.genome_2[self.mutated_layer_num]
+		print(self.mutated_layer)##For debugging
+		for i in self.mutated_layer:
+			for j in i:
+				if j == 'rate':
+					while True :
+						self.a = self.pickone(self.droputout_rate_list)
+						if self.a != i[j] :
+							i[j] = self.a
+							break
+						else:
+							self.a = self.pickone(self.droputout_rate_list)
+				if j == 'momentum':
+					while True :
+						self.a = self.pickone(self.momentum_list)
+						if self.a != i[j] :
+							i[j] = self.a
+							break
+						else:
+							self.a = self.pickone(self.momentum_list)
+				if j == 'epsilon':
+					while True :
+						self.a = self.pickone(self.epsilon_list)
+						if self.a != i[j] :
+							i[j] = self.a
+							break
+						else:
+							self.a = self.pickone(self.epsilon_list)
+				if j == 'strides':
+					while True :
+						self.a = self.pickone(self.strides_list)
+						if self.a != i[j] :
+							i[j] = self.a
+							break
+						else:
+							self.a = self.pickone(self.strides_list)
+				if j == 'activation':
+					while True :
+						self.a = self.pickone(self.activations)
+						if self.a != i[j] :
+							i[j] = self.a
+							break
+						else:
+							self.a = self.pickone(self.activations)
+				if j == 'kernel_size':
+					while True :
+						self.a = self.pickone(self.kernel_size_list)
+						if self.a != i[j] :
+							i[j] = self.a
+							break
+						else:
+							self.a = self.pickone(self.kernel_size_list)
+				if j == 'filters':
+					while True :
+						self.a = self.pickone(self.output_filter_depth_list)
+						if self.a != i[j] :
+							i[j] = self.a
+							break
+						else:
+							self.a = self.pickone(self.output_filter_depth_list)
+				if j == 'interpolation':
+					while True :
+						self.a = self.pickone(self.interpolation_list)
+						if self.a != i[j] :
+							i[j] = self.a
+							break
+						else:
+							self.a = self.pickone(self.interpolation_list)
+				if j == 'size':
+					while True :
+						self.a = self.pickone(self.kernel_size_list)
+						if self.a != i[j] :
+							i[j] = self.a
+							break
+						else:
+							self.a = self.pickone(self.kernel_size_list)
+		print(self.mutated_layer)#For debugging
+		self.genome_2[self.mutated_layer_num] = self.mutated_layer
+
+		#self.genome_2 is ready!
+			
+
+
+
 a = GA(20,15,0,(640,420,3))
-genome_1 = a.init_genome()
-genome_2 = a.init_genome()
-crossed_breeds = a.crossover([genome_1,genome_2])
-for i in crossed_breeds:
-	for j in i:
-		for k in j:
-			print(k)
-
-	print("New child")
-	print('\n')
-
-print(len(crossed_breeds))
+best_5 = []
+for i in range(5):
+	best_5.append(a.init_genome())
+a.mutation(best_5)
 #model = a.decode_genome(a.init_genome(),a.input_shape)
 #model.summary()
