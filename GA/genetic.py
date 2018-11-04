@@ -348,6 +348,7 @@ class GA:
 		self.genome_2[self.mutated_layer_num] = self.mutated_layer
 
 		#self.genome_2 is ready!
+		#genome_1 is not yet ready
 		return genome_1,genome_2
 
 	def init_population(self):
