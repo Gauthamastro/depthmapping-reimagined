@@ -1,7 +1,8 @@
 import random
 from keras.layers import Conv2D,SeparableConv2D,Conv2DTranspose,UpSampling2D,Dense,Dropout,SpatialDropout2D,Concatenate,Add
-from keras.models import Sequential
-from keras.layers import Input
+from keras.models import Sequential,Model
+from keras.layers import Input,BatchNormalization,AveragePooling2D,GlobalMaxPooling2D,MaxPooling2D,GlobalAveragePooling2D
+import numpy as np 
 
 seed =34
 random.seed(34)
@@ -108,8 +109,8 @@ class GA:
 		self.special_convT_layers =['Conv2DTranspose','UpSampling2D']
 		self.drop_layers = ['Dropout','SpatialDropout2D']#No 1
 		self.merge_layers = ['Add']
-		self.activations = ['"softmax"','"relu"','"LeakyReLU"','"PReLU"','"ELU"','"ThresoldedReLU"']
-		self.pooling_layers = ['MaxPooling2D','AveragePooling2D','GlobalMaxPooling2D','GlobalAveragePooling2D']#No 2
+		self.activations = ['"softmax"','"relu"','"elu"'] #ThresholdedReLU, LeakyReLU, PReLU should be added later
+		self.pooling_layers = ['MaxPooling2D','AveragePooling2D']#No 2 ....we are not implementing these globalavg and globalmax due to dimension errors!
 		self.normalization = ['BatchNormalization'] #No 3
 		self.dense_layer = ['Dense']
 
@@ -124,6 +125,7 @@ class GA:
 		self.strides_list = [1,2,3,4,5]
 		self.padding_list = ['"same"'] #['same','valid']
 		self.data_format_list = ['"channels_last"'] #['channels_last','channels_first']
+		self.interpolation_list =['"bilinear"','"nearest"'] 
 		self.momentum_list = [0.9,0.99,0.999]
 		self.epsilon_list = [0.001,0.01,0.1]
 		self.pool_size_list = [1,2,3]
@@ -169,12 +171,6 @@ class GA:
 		self.genome.append([{'layer':'Dense',
 							'units':self.pickone(self.units)}])
 
-		for i in self.genome:# for debugging only
-			print(i) # for debugging only
-		print('\n')
-		print('\n')
-
-
 		for i in range(len(self.genome)):
 			for j in range(len(self.genome[i])):
 				if self.genome[i][j] == 'special_conv_layers':
@@ -211,17 +207,14 @@ class GA:
 					
 					else:
 						self.gene = {'layer':'UpSampling2D',
-										'filters':self.pickone(self.output_filter_depth_list),
-										'kernel_size':self.pickone(self.kernel_size_list),
-										'strides':self.pickone(self.strides_list),
-										'padding':self.pickone(self.padding_list),
+										
+										'size':self.pickone(self.kernel_size_list),
 										'data_format':self.pickone(self.data_format_list),
-										'activation':self.pickone(self.activations)}
+										'interpolation':self.pickone(self.interpolation_list)}
 						self.genome[i][j] = self.gene
 					
 				if self.genome[i][j] == 'pooling_layers':
-					k  = random.randint(1,4)
-					if k == 1:
+					if random.randint(0,1):
 						self.gene = {'layer':'MaxPooling2D',
 										'pool_size':self.pickone(self.pool_size_list),
 										'strides':self.pickone(self.strides_list),
@@ -230,26 +223,8 @@ class GA:
 										}
 						self.genome[i][j] = self.gene
 					
-					if k == 2:
-						self.gene = {'layer':'GlobalMaxPooling2D',
-										'pool_size':self.pickone(self.pool_size_list),
-										'strides':self.pickone(self.strides_list),
-										'padding':self.pickone(self.padding_list),
-										'data_format':self.pickone(self.data_format_list),
-										}
-						self.genome[i][j] = self.gene
-					
-					if k == 3:
+					else:
 						self.gene = {'layer':'AveragePooling2D',
-										'pool_size':self.pickone(self.pool_size_list),
-										'strides':self.pickone(self.strides_list),
-										'padding':self.pickone(self.padding_list),
-										'data_format':self.pickone(self.data_format_list),
-										}
-						self.genome[i][j] = self.gene
-					
-					if k == 4:
-						self.gene = {'layer':'GlobalAveragePooling2D',
 										'pool_size':self.pickone(self.pool_size_list),
 										'strides':self.pickone(self.strides_list),
 										'padding':self.pickone(self.padding_list),
@@ -267,8 +242,7 @@ class GA:
 				if self.genome[i][j] == 'drop_layers':
 					if random.randint(0,1):
 						self.gene = {'layer':'Dropout',
-										'rate':self.pickone(self.droputout_rate_list),
-										'data_format':self.pickone(self.data_format_list)}
+										'rate':self.pickone(self.droputout_rate_list)}
 						self.genome[i][j] = self.gene
 					
 					else:
@@ -285,10 +259,7 @@ class GA:
 
 	def decode_genome(self,genome,input_shape):
 		#genome is a list of layers and their params
-		for i in self.genome:# for debugging only!
-			for j in i:
-				print(j)
-		self.commands = ['layer0 = Input'+str(input_shape)]
+		self.commands = ['layer0 = Input(shape=np.array('+str(input_shape)+'))']
 		self.layer_count = 1
 		for i in range(1,len(self.genome),1):
 			for j in self.genome[i]:
@@ -307,7 +278,7 @@ class GA:
 						self.layer_count = self.layer_count + 1
 					else:
 						if (self.params_coded == (self.params_lenght-1)):
-							if (k == 'units'):
+							if (self.params_lenght == 1):
 								self.cmd = self.cmd + k+ '=' + str(j[k]) + ')(layer' +str(self.layer_count-2)+')'
 							else:
 								self.cmd = self.cmd + ','+ k+ '=' + str(j[k]) + ')(layer' +str(self.layer_count-2)+')'
@@ -323,10 +294,34 @@ class GA:
 		self.layer_count= self.layer_count-1 # name of the last genetic layer will be layer<self.layer_count>
 
 		#Creation of actual keras model begins here!
+		print('\n')
+		print('\n')
+		print('\n')
+
+		for i in range(len(self.commands)):
+			try:
+				print(self.commands[i])
+				exec(self.commands[i])
+			except ValueError :
+				print('Error at layer ',i)### This is done like this to make the error easy to see in the terminal :-p
+				print('Error at layer ',i)
+				print('Error at layer ',i)
+				print('Error at layer ',i)
+				print('Error at layer ',i)
+				print('Error at layer ',i)
+				print('Error at layer ',i)
+				print('Error at layer ',i)
+				print('Error at layer ',i)
+				break
+			self.layer_count = i
+		exec('self.model = Model(input=layer0,output=layer'+str(self.layer_count)+')')
+		return self.model
 
 
 
 
 
-a = GA(20,15,0,(100,100,3),)
-a.decode_genome(a.init_genome(),a.input_shape)
+a = GA(20,15,0,(640,420,3))
+for i in range(20):
+	model = a.decode_genome(a.init_genome(),a.input_shape)
+	#model.summary()
