@@ -322,6 +322,5 @@ class GA:
 
 
 a = GA(20,15,0,(640,420,3))
-for i in range(20):
-	model = a.decode_genome(a.init_genome(),a.input_shape)
-	#model.summary()
+model = a.decode_genome(a.init_genome(),a.input_shape)
+model.summary()
