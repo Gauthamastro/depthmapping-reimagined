@@ -1,4 +1,4 @@
-import random
+import random,math
 from keras.layers import Conv2D,SeparableConv2D,Conv2DTranspose,UpSampling2D,Dense,Dropout,SpatialDropout2D,Concatenate,Add
 from keras.models import Sequential,Model
 from keras.layers import Input,BatchNormalization,AveragePooling2D,GlobalMaxPooling2D,MaxPooling2D,GlobalAveragePooling2D
@@ -227,9 +227,49 @@ class GA:
 		return self.model
 
 
+	def crossover(self,top_2_individuals):
+		self.genome_1 = top_2_individuals[0]
+		self.genome_2 = top_2_individuals[1]
+		self.genome_1 = self.genome_1[1:(len(self.genome_1)-1)]
+		self.genome_2 = self.genome_2[1:(len(self.genome_2)-1)]
+		self.crossed_breeds = []
+		for i in range(1,10,1):
+			self.layer_cut_1 = math.floor((i/(10-i))*len(self.genome_1))
+			self.layer_cut_2 = math.floor((i/(10-i))*len(self.genome_2))
+			self.new_genome_1 = self.genome_2[:self.layer_cut_2]
+			self.new_genome_2 = self.genome_1[:self.layer_cut_1]
+			self.new_genome_1.extend(self.genome_1[(self.layer_cut_1):])
+			self.new_genome_2.extend(self.genome_2[(self.layer_cut_2):])
+			self.new_genome_1.insert(0,top_2_individuals[1][0])
+			self.new_genome_2.insert(0,top_2_individuals[0][0])
+			self.new_genome_1.append(top_2_individuals[0][-1])
+			self.new_genome_2.append(top_2_individuals[1][-1])
+			self.crossed_breeds.append(self.new_genome_1)
+			self.crossed_breeds.append(self.new_genome_2)
+		return self.crossed_breeds
+
+
+
+
+
+	def mutation(self):
+		pass
+
+
+
 
 
 
 a = GA(20,15,0,(640,420,3))
-model = a.decode_genome(a.init_genome(),a.input_shape)
-model.summary()
+genome_1 = a.init_genome()
+genome_2 = a.init_genome()
+crossed_breeds = a.crossover([genome_1,genome_2])
+for i in crossed_breeds:
+	for j in i:
+		for k in j:
+			print(k)
+
+	print("New child")
+	print('\n')
+#model = a.decode_genome(a.init_genome(),a.input_shape)
+#model.summary()
