@@ -10,98 +10,6 @@ random.seed(34)
 #We give optimal parameters in the init fn of these classes !
 #these will be accessed on execution for mutation and crossover!
 
-
-class conv_layers:
-
-	def C2D(self,filters,kernel_size,strides,padding,data_format,activation):
-		self.layer = Conv2D(filters,kernel_size, strides=strides,
-							padding=padding, data_format=data_format, activation=activation)
-		return self.layer #self.layer.output_shape
-
-	def S2D(self,filters,kernel_size,strides,padding,data_format,activation):
-		self.layer = SeparableConv2D(filters,kernel_size, strides=strides,
-									 padding=padding, data_format=data_format, activation=activation)
-		return self.layer
-
-
-class convT_layers:
-
-	def C2DT(self,filters,kernel_size,strides,padding,data_format,activation):
-		self.layer=keras.layers.Conv2DTranspose(filters, kernel_size, strides=strides, 
-												padding=padding, output_padding=None, data_format=data_format,activation=activation)
-		return self.layer
-
-	def US2D(self,filters,kernel_size,strides,padding,data_format,activation):
-		self.layer=UpSampling2D(filters, kernel_size, strides=strides,
-												 padding=padding, output_padding=None, data_format=data_format,activation=activation)
-		return self.layer
-class drop_layers :
-
-	def DO(self,rate):
-		self.layer = Dropout(rate,seed =seed)
-		return self.layer
-
-	def SDO(self,rate,data_format):
-		self.layer =  SpatialDropout2D(rate, data_format=data_format)
-		return self.layer
-
-class dense_layers:
-
-	def D(self,units,activation):
-		self.layer = Dense(units, activation=activation)
-		return self.layer
-
-class merge_layers:
-	def ADD(self,input_list):
-		self.layer = Add()(input_list)
-		return self.layer
-
-class activations:
-	def LeakyReLU_act(self,layer,alpha=0.3):
-		self.layer = LeakyReLU(alpha=alpha)(layer)
-		return self.layer
-
-	def PReLU_act(self,layer):
-		self.layer = PReLU()(layer)
-		return self.layer
-
-	def ELU_act(self,layer,alpha=1.0):
-		self.layer = ELU(alpha)(layer)
-		return self.layer
-
-	def ThresoldedReLU_act(self,layer,theta=1.0):
-		self.layer = ThresoldedReLU(theta)(layer)
-		return self.layer
-
-	def relu_act(self,layer, negative_slope=0.0, threshold=0.0):
-		self.layer = ReLU(max_value,negative_slope,threshold)(layer)
-		return self.layer
-
-class pooling_layers:
-
-	def MaxPooling2D_layer(self,input_layer,pool_size=(2, 2), strides=None, padding='valid', data_format=None):
-		self.layer = MaxPooling2D(pool_size=pool_size, strides=strides, padding=padding, data_format=data_format)(input_layer)
-		return self.layer
-
-	def AveragePooling2D_layer(self,input_layer,pool_size=(2, 2), strides=None, padding='valid', data_format=None):
-		self.layer = AveragePooling2D(pool_size=pool_size, strides=strides, padding=padding, data_format=data_format)(input_layer)
-		return self.layer
-	
-	def GloblalMaxPooling2D_layer(self,input_layer,pool_size=(2, 2), strides=None, padding='valid', data_format=None):
-		self.layer = GlobalMaxPooling2D(pool_size=pool_size, strides=strides, padding=padding, data_format=data_format)(input_layer)
-		return self.layer
-	
-	def GlobalAveragePooling2D_layer(self,input_layer,pool_size=(2, 2), strides=None, padding='valid', data_format=None):
-		self.layer = GlobalAveragePooling2D(pool_size=pool_size, strides=strides, padding=padding, data_format=data_format)(input_layer)
-		return self.layer
-
-class normalization:
-
-	def BatchNormalization_layer(axis,momentum,epsilon):
-		self.layer = keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001) #axis is done by assuming channels last
-		return self.layer
-	
-
 class GA:
 	def __init__(self,max_conv_layers,max_convT_layers,max_skip_connections,input_shape):
 		#Layers available for genetic alogorithm to make
@@ -295,9 +203,10 @@ class GA:
 
 		#Creation of actual keras model begins here!
 		print('\n')
+		print('Commands thats going to be executed now !')
 		print('\n')
 		print('\n')
-
+		print('Commands thats going to be executed now !')
 		for i in range(len(self.commands)):
 			try:
 				print(self.commands[i])
