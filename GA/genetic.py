@@ -1,5 +1,7 @@
 import random
 from keras.layers import Conv2D,SeparableConv2D,Conv2DTranspose,UpSampling2D,Dense,Dropout,SpatialDropout2D,Concatenate,Add
+from keras.models import Sequential
+from keras.layers import Input
 
 seed =34
 random.seed(34)
@@ -106,7 +108,7 @@ class GA:
 		self.special_convT_layers =['Conv2DTranspose','UpSampling2D']
 		self.drop_layers = ['Dropout','SpatialDropout2D']#No 1
 		self.merge_layers = ['Add']
-		self.activations = ['softmax','relu','LeakyReLU','PReLU','ELU','ThresoldedReLU']
+		self.activations = ['"softmax"','"relu"','"LeakyReLU"','"PReLU"','"ELU"','"ThresoldedReLU"']
 		self.pooling_layers = ['MaxPooling2D','AveragePooling2D','GlobalMaxPooling2D','GlobalAveragePooling2D']#No 2
 		self.normalization = ['BatchNormalization'] #No 3
 		self.dense_layer = ['Dense']
@@ -120,8 +122,8 @@ class GA:
 		self.output_filter_depth_list = [2,4,16,32,64,128,256,512,1024] # assumeing channels last
 		self.kernel_size_list = [1,3,5,7,9,11]
 		self.strides_list = [1,2,3,4,5]
-		self.padding_list = ['same'] #['same','valid']
-		self.data_format_list = ['channels_last'] #['channels_last','channels_first']
+		self.padding_list = ['"same"'] #['same','valid']
+		self.data_format_list = ['"channels_last"'] #['channels_last','channels_first']
 		self.momentum_list = [0.9,0.99,0.999]
 		self.epsilon_list = [0.001,0.01,0.1]
 		self.pool_size_list = [1,2,3]
@@ -143,7 +145,7 @@ class GA:
 		for i in range(self.max_conv_layers):
 			self.a = ['special_conv_layers']
 			if random.randint(0,1):
-				self.a.append('BatchNormalization_layer')
+				self.a.append('BatchNormalization')
 			if random.randint(0,1):
 				self.a.append('pooling_layers')
 			if random.randint(0,1):
@@ -163,8 +165,9 @@ class GA:
 			self.genome.append(self.a)
 
 		random.shuffle(self.genome)
-		self.genome.insert(0,['input_layer'])
-		self.genome.append(['dense_layer'])
+		self.genome.insert(0,[{'layer':'Input'}])
+		self.genome.append([{'layer':'Dense',
+							'units':self.pickone(self.units)}])
 
 		for i in self.genome:# for debugging only
 			print(i) # for debugging only
@@ -253,7 +256,14 @@ class GA:
 										'data_format':self.pickone(self.data_format_list),
 										}
 						self.genome[i][j] = self.gene
-					
+
+				if self.genome[i][j] == 'BatchNormalization':
+					self.gene = {'layer':'BatchNormalization',
+								'momentum':self.pickone(self.momentum_list),
+								'epsilon':self.pickone(self.epsilon_list)}
+					self.genome[i][j] = self.gene
+
+
 				if self.genome[i][j] == 'drop_layers':
 					if random.randint(0,1):
 						self.gene = {'layer':'Dropout',
@@ -273,14 +283,50 @@ class GA:
 
 
 
-	def decode_genome(self,genome):
+	def decode_genome(self,genome,input_shape):
 		#genome is a list of layers and their params
 		for i in self.genome:# for debugging only!
 			for j in i:
 				print(j)
+		self.commands = ['layer0 = Input'+str(input_shape)]
+		self.layer_count = 1
+		for i in range(1,len(self.genome),1):
+			for j in self.genome[i]:
+				self.cmd = 'layer'+str(self.layer_count)+'='
+				self.params_lenght = (len(j)-1)
+				self.params_coded = 0
+				#print('\n')
+				#print('\n')
+				#print('\n')
+				#print(j)#Debugging
+				#print(self.params_lenght)#Debugging
+				#_ = input()#Debugging
+				for k in j:
+					if k == 'layer':
+						self.cmd = self.cmd + j[k] + '('
+						self.layer_count = self.layer_count + 1
+					else:
+						if (self.params_coded == (self.params_lenght-1)):
+							if (k == 'units'):
+								self.cmd = self.cmd + k+ '=' + str(j[k]) + ')(layer' +str(self.layer_count-2)+')'
+							else:
+								self.cmd = self.cmd + ','+ k+ '=' + str(j[k]) + ')(layer' +str(self.layer_count-2)+')'
+						else:
+							if self.params_coded==0:
+								self.cmd = self.cmd + k + '=' + str(j[k])
+								self.params_coded = self.params_coded +1
+							else:
+								self.cmd = self.cmd + ',' + k + '=' + str(j[k])
+								self.params_coded = self.params_coded +1
+				self.commands.append(self.cmd)
+
+		self.layer_count= self.layer_count-1 # name of the last genetic layer will be layer<self.layer_count>
+
+		#Creation of actual keras model begins here!
+
 
 
 
 
 a = GA(20,15,0,(100,100,3),)
-a.decode_genome(a.init_genome())
+a.decode_genome(a.init_genome(),a.input_shape)
