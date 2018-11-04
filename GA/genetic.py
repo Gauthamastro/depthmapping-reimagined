@@ -12,7 +12,7 @@ random.seed(34)
 #these will be accessed on execution for mutation and crossover!
 
 class GA:
-	def __init__(self,max_conv_layers,max_convT_layers,max_skip_connections,input_shape):
+	def __init__(self,max_conv_layers,max_convT_layers,max_individuals,input_shape):
 		#Layers available for genetic alogorithm to make
 		self.special_conv_layers = ['Conv2D','SeparableConv2D']
 		self.special_convT_layers =['Conv2DTranspose','UpSampling2D']
@@ -25,11 +25,11 @@ class GA:
 
 		self.max_conv_layers=max_conv_layers
 		self.max_convT_layers=max_convT_layers
-		self.max_skip_connections=max_skip_connections
+		self.max_individuals=max_individuals
 		self.input_shape = input_shape	
 
 		#Params that genetic algorithm will use to search!
-		self.output_filter_depth_list = [2,4,16,32,64,128,256,512,1024] # assumeing channels last
+		self.output_filter_depth_list = [2**i for in range(1,11,1)] # assumeing channels last
 		self.kernel_size_list = [1,3,5,7,9,11]
 		self.strides_list = [1,2,3,4,5]
 		self.padding_list = ['"same"'] #['same','valid']
@@ -38,7 +38,7 @@ class GA:
 		self.momentum_list = [0.9,0.99,0.999]
 		self.epsilon_list = [0.001,0.01,0.1]
 		self.pool_size_list = [1,2,3]
-		self.units = [2,4,16,32,64,128,256,512,1024,2048]
+		self.units = [2**i for in range(1,12,1)]
 		self.alpha_list = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 		self.droputout_rate_list = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 
@@ -348,11 +348,23 @@ class GA:
 		self.genome_2[self.mutated_layer_num] = self.mutated_layer
 
 		#self.genome_2 is ready!
+		return genome_1,genome_2
+
+	def init_population(self):
+		self.pop = []
+		for i in range(self.max_individuals):
+			self.pop.append(self.init_genome())
+		return self.pop
+
+	def maintain_pop(self,pop):
+		self.generation = 1
+		print('Generation = ',self.generation)
+
 			
 
 
 
-a = GA(20,15,0,(640,420,3))
+a = GA(20,15,20,(640,420,3))
 best_5 = []
 for i in range(5):
 	best_5.append(a.init_genome())
