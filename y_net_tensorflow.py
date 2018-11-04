@@ -18,7 +18,12 @@ initializer=tf.contrib.layers.xavier_initializer()
 seed=32
 ew1= tf.Variable(initializer([5,5,channels,64]))#[h,w,inputchannels,outputchannels]
 ew2= tf.Variable(tf.random_normal([5,5,64,64], seed=seed))
-ew3= tf.Variable(tf.random_normal([img_height*img_width*64,1024], seed=seed))
+ew3= tf.Variable(tf.random_normal([img_height*img_width*64,1024], seed=seed)) 
+
+'''This is the line above that is making the problem ! it cant allocate such a large tensor [640000,1024]
+	u need to change the dimensions! 
+
+'''
 ew4= tf.Variable(tf.random_normal([1024,512], seed=seed))
 ew5= tf.Variable(tf.random_normal([512,216], seed=seed))
 
@@ -96,12 +101,12 @@ with tf.Session() as sess:
 	input_img=cv2.imread("/home/akash/Desktop/my_car/real_data/f(0).jpg")
 	input_img= cv2.resize(input_img,(100,100))
 	#cv2.imshow('input image',input_img)
-	print np.shape(input_img)
+	print (np.shape(input_img))
 	i = Image.fromarray(input_img)
 	i.show()
 	output=sess.run(output_image,feed_dict={observationsx:[input_img]})
 	#print output
-	print np.shape(output[0])
+	print (np.shape(output[0]))
 	output=output.ravel()
 	output=np.reshape(output,(100,100))
 	i = Image.fromarray(output)
