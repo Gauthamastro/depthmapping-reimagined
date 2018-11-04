@@ -249,16 +249,22 @@ class GA:
 		return self.crossed_breeds
 
 
+	def best_params(best_5):
+		for i in best_5:
+			for j in i:
+				for k in j:
+					for p in k:
+						pass
 
 
 
-	def mutation(self):
-		pass
 
-
-
-
-
+	def mutation(self,next_best_5):
+		#here the best 5 means next 5 after top 2 
+		# ie from 3rd to 7th best model
+		next_best_5.shuffle()
+		self.genome_1 = next_best_5[0]
+		self.genome_2 = next_best_5[1]
 
 a = GA(20,15,0,(640,420,3))
 genome_1 = a.init_genome()
@@ -271,5 +277,7 @@ for i in crossed_breeds:
 
 	print("New child")
 	print('\n')
+
+print(len(crossed_breeds))
 #model = a.decode_genome(a.init_genome(),a.input_shape)
 #model.summary()
