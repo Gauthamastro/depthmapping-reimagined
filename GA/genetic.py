@@ -13,7 +13,14 @@ random.seed(34)
 #these will be accessed on execution for mutation and crossover!
 
 class GA:
-	def __init__(self,max_conv_layers,max_convT_layers,max_individuals,input_shape):
+	def __init__(self,max_conv_layers,max_convT_layers,max_individuals,input_shape,x_train,y_train,x_test,y_test,epochs):
+		self.x_train = x_train
+		self.y_train = y_train
+		self.x_test = x_test
+		self.y_test = y_test
+
+		self.epochs = epochs
+
 		#Layers available for genetic alogorithm to make
 		self.special_conv_layers = ['Conv2D','SeparableConv2D']
 		self.special_convT_layers =['Conv2DTranspose','UpSampling2D']
@@ -224,8 +231,8 @@ class GA:
 				print('Error at layer ',i)
 				break
 			self.layer_count = i
-		exec('self.model = Model(input=layer0,output=layer'+str(self.layer_count)+')')
-		return self.model
+		#exec('self.model = Model(input=layer0,output=layer'+str(self.layer_count)+')')
+		return self.layer_count
 
 
 	def crossover(self,top_2_individuals):
@@ -473,8 +480,40 @@ class GA:
 		self.genome_2[self.mutated_layer_num] = self.mutated_layer
 
 		#self.genome_2 is ready!
-		#genome_1 is not yet ready
+		#genome_1 is  ready
 		return self.genome_1,self.genome_2
+
+	def _handle_broken_model(self, model, error):
+        del model
+        gc.collect()
+        if K.backend() == 'tensorflow':
+            K.clear_session()
+            tf.reset_default_graph()
+
+        print('An error occurred and the model could not train:')
+        print('\n')
+        print(error)
+        print('\n')
+        print(('Please ensure that your model'
+               'constraints live within your computational resources.'))
+
+	def evaluate_genome(self,model, epochs,Generation,individual):
+        loss, accuracy = None, None
+        try:
+            model.fit(self.x_train, self.y_train,
+                      validation_data=(self.x_test, self.y_test),
+                      epochs=epochs,
+                      verbose=1,
+                      callbacks=[
+                          EarlyStopping(monitor='val_loss',
+                                        patience=1,
+                                        verbose=1)
+                      ])
+            loss, accuracy = model.evaluate(self.x_test, self.y_test, verbose=0)
+        except Exception as e:
+            loss, accuracy = self._handle_broken_model(model, e)
+        self.name = 'generation-'+str(Generation)+'-individual-'+str(individual)
+        return [self.name,model, loss, accuracy]
 
 	def init_population(self):
 		self.pop = []
@@ -483,16 +522,36 @@ class GA:
 		return self.pop
 
 	def maintain_pop(self,pop):
-		self.generation = 1
-		print('Generation = ',self.generation)
+		self.Generation = 1
+		self.pop = pop
+		while self.Generation <= self.max_generations:
+			print('Generation Count = ',i)
+			self.scores = []
+			for i in range(len(self.pop)):
+				self.layer_count = self.decode_genome(i)
+				'''
+				include the data specific final layers using exec commands also take care of the layer number
+
+				'''
+				exec('self.model = Model(input=layer0,output=layer'+str(self.layer_count)+')')
+				if self.layer_count>20:
+					self.adm = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+					self.model.compile(loss='binary_crossentropy',optimizer=self.adm,metrics=['accuracy']) #loss is not defined
+				else:
+					self.sgd =keras.optimizers.SGD(lr=0.01, momentum=0.0, decay=0.0, nesterov=True)
+					self.model.compile(loss='binary_crossentropy',optimizer=self.sgd,metrics=['accuracy'])#loss is not defined!
+				self.scores.append(evaluate_genome(self.model,self.epochs,self.Generation,i))
+			self.best_7 = []
+			for i in self.scores:
+				pass #code the rest from here!
+			self.Generation = self.Generation + 1
+
 
 			
-a = GA(20,15,20,(640,420,3))
-best_5 = []
-for i in range(5):
-	best_5.append(a.init_genome())
-k,_ = a.mutation(best_5)
-model = a.decode_genome(k,a.input_shape)
-model.summary()
+a = GA(20,15,20,(640,420,3))#Data is not given yet!
+
+members = a.init_population()
+a.maintain_pop(members)
+
 #model = a.decode_genome(a.init_genome(),a.input_shape)
 #model.summary()
