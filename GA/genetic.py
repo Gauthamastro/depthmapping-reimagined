@@ -33,7 +33,7 @@ class GA:
 		self.output_filter_depth_list = [2**i for i in range(1,11,1)] # assumeing channels last
 		self.kernel_size_list = [1,3,5,7,9,11]
 		self.strides_list = [1,2,3,4,5]
-		self.padding_list = ['"same"'] #['same','valid']
+		self.padding_list = ['"same"','"valid"'] #['same','valid']
 		self.data_format_list = ['"channels_last"'] #['channels_last','channels_first']
 		self.interpolation_list =['"bilinear"','"nearest"'] 
 		self.momentum_list = [0.9,0.99,0.999]
@@ -370,8 +370,26 @@ class GA:
 		self.best_params_list = self.best_params(next_best_5)
 		#Code for the 19th person
 		for module in self.genome_1:
-			for gene in module:
-				
+			for i in range(len(module)):
+				self.gene = module[i]
+				if self.gene['layer'] == 'Conv2D':
+					module[i] = self.best_params_list[0]
+				if self.gene['layer'] == 'SeparableConv2D':
+					module[i] = self.best_params_list[1]
+				if self.gene['layer'] == 'Conv2DTranspose':
+					module[i] = self.best_params_list[2]
+				if self.gene['layer'] == 'UpSampling2D':
+					module[i] = self.best_params_list[3]
+				if self.gene['layer'] == 'MaxPooling2D':
+					module[i] = self.best_params_list[4]
+				if self.gene['layer'] == 'AveragePooling2D':
+					module[i] = self.best_params_list[5]
+				if self.gene['layer'] == 'BatchNormalization':
+					module[i] = self.best_params_list[6]
+				if self.gene['layer'] == 'Dropout':
+					module[i] = self.best_params_list[7]
+				if self.gene['layer'] == 'SpatialDropout2D':
+					module[i] = self.best_params_list[8]
 
 		#Code for the 20th person!
 		self.mutated_layer_num = random.randint(0,len(self.genome_2))
@@ -469,13 +487,12 @@ class GA:
 		print('Generation = ',self.generation)
 
 			
-
-
-
 a = GA(20,15,20,(640,420,3))
 best_5 = []
 for i in range(5):
 	best_5.append(a.init_genome())
 k,_ = a.mutation(best_5)
+model = a.decode_genome(k,a.input_shape)
+model.summary()
 #model = a.decode_genome(a.init_genome(),a.input_shape)
 #model.summary()
