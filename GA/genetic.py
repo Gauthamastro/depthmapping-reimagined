@@ -4,6 +4,7 @@ from keras.layers import Conv2D,SeparableConv2D,Conv2DTranspose,UpSampling2D,Den
 from keras.models import Sequential,Model
 from keras.layers import Input,BatchNormalization,AveragePooling2D,GlobalMaxPooling2D,MaxPooling2D,GlobalAveragePooling2D
 import numpy as np 
+from collections import Counter
 
 seed =34
 random.seed(34)
@@ -29,7 +30,7 @@ class GA:
 		self.input_shape = input_shape	
 
 		#Params that genetic algorithm will use to search!
-		self.output_filter_depth_list = [2**i for in range(1,11,1)] # assumeing channels last
+		self.output_filter_depth_list = [2**i for i in range(1,11,1)] # assumeing channels last
 		self.kernel_size_list = [1,3,5,7,9,11]
 		self.strides_list = [1,2,3,4,5]
 		self.padding_list = ['"same"'] #['same','valid']
@@ -38,7 +39,7 @@ class GA:
 		self.momentum_list = [0.9,0.99,0.999]
 		self.epsilon_list = [0.001,0.01,0.1]
 		self.pool_size_list = [1,2,3]
-		self.units = [2**i for in range(1,12,1)]
+		self.units = [2**i for i in range(1,12,1)]
 		self.alpha_list = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 		self.droputout_rate_list = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 
@@ -170,8 +171,8 @@ class GA:
 		#genome is a list of layers and their params
 		self.commands = ['layer0 = Input(shape=np.array('+str(input_shape)+'))']
 		self.layer_count = 1
-		for i in range(1,len(self.genome),1):
-			for j in self.genome[i]:
+		for i in range(1,len(genome),1):
+			for j in genome[i]:
 				self.cmd = 'layer'+str(self.layer_count)+'='
 				self.params_lenght = (len(j)-1)
 				self.params_coded = 0
@@ -207,7 +208,6 @@ class GA:
 		print('Commands thats going to be executed now !')
 		print('\n')
 		print('\n')
-		print('Commands thats going to be executed now !')
 		for i in range(len(self.commands)):
 			try:
 				print(self.commands[i])
@@ -249,15 +249,117 @@ class GA:
 			self.crossed_breeds.append(self.new_genome_2)
 		return self.crossed_breeds
 
+	def  max_count(self,l):
+		self.data = Counter(l)
+		#print(type(self.data.most_common(1)[0][0]))
+		return self.data.most_common(1)[0][0]
 
 	def best_params(self,best_5):
-		pass
+		self.Conv2D_params_list = []
+		self.SeparableConv2D_params_list = []
+		self.Conv2DTranspose_params_list= []
+		self.UpSampling2D_params_list = []
+		self.BatchNormalization_params_list = []
+		self.Dropout_params_list = []
+		self.SpatialDropout2D_params_list = []
+		self.MaxPooling2D_params_list = []
+		self.AveragePooling2D_params_list = []
+		for model in best_5:
+			for module in model:
+				for genome in module:
+					if genome['layer']== 'Conv2D':
+						self.Conv2D_params_list.append([genome['filters'],genome['kernel_size'],genome['strides'],genome['padding'],genome['data_format'],genome['activation']])
+					if genome['layer']== 'SeparableConv2D':
+						self.SeparableConv2D_params_list.append([genome['filters'],genome['kernel_size'],genome['strides'],genome['padding'],genome['data_format'],genome['activation']])
+					if genome['layer']== 'Conv2DTranspose':
+						self.Conv2DTranspose_params_list.append([genome['filters'],genome['kernel_size'],genome['strides'],genome['padding'],genome['data_format'],genome['activation']])
+					if genome['layer']== 'UpSampling2D':
+						self.UpSampling2D_params_list.append([genome['size'],genome['data_format'],genome['interpolation']])
+					if genome['layer']== 'BatchNormalization':
+						self.BatchNormalization_params_list.append([genome['momentum'],genome['epsilon']])
+					if genome['layer']== 'Dropout':
+						self.Dropout_params_list.append([genome['rate']])
+					if genome['layer']== 'SpatialDropout2D':
+						self.SpatialDropout2D_params_list.append([genome['rate'],genome['data_format']])
+					if genome['layer']== 'MaxPooling2D':
+						self.MaxPooling2D_params_list.append([genome['pool_size'],genome['strides'],genome['padding'],genome['data_format']])
+					if genome['layer']== 'AveragePooling2D':
+						self.AveragePooling2D_params_list.append([genome['pool_size'],genome['strides'],genome['padding'],genome['data_format']])
+		
+		self.Conv2D_params_list = np.array(self.Conv2D_params_list)
+		self.SeparableConv2D_params_list = np.array(self.SeparableConv2D_params_list)
+		self.Conv2DTranspose_params_list= np.array(self.Conv2DTranspose_params_list)
+		self.UpSampling2D_params_list = np.array(self.UpSampling2D_params_list)
+		self.BatchNormalization_params_list = np.array(self.BatchNormalization_params_list)
+		self.Dropout_params_list = np.array(self.Dropout_params_list)
+		self.SpatialDropout2D_params_list = np.array(self.SpatialDropout2D_params_list)
+		self.MaxPooling2D_params_list = np.array(self.MaxPooling2D_params_list)
+		self.AveragePooling2D_params_list = np.array(self.AveragePooling2D_params_list)
 
-					
-					
+		self.Conv2D_params_list = [self.max_count(self.Conv2D_params_list[:,0]),self.max_count(self.Conv2D_params_list[:,1]),self.max_count(self.Conv2D_params_list[:,2]),self.max_count(self.Conv2D_params_list[:,3]),self.max_count(self.Conv2D_params_list[:,4]),self.max_count(self.Conv2D_params_list[:,5])]
+		self.SeparableConv2D_params_list = [self.max_count(self.SeparableConv2D_params_list[:,0]),self.max_count(self.SeparableConv2D_params_list[:,1]),self.max_count(self.SeparableConv2D_params_list[:,2]),self.max_count(self.SeparableConv2D_params_list[:,3]),self.max_count(self.SeparableConv2D_params_list[:,4]),self.max_count(self.SeparableConv2D_params_list[:,5])]
+		self.Conv2DTranspose_params_list = [self.max_count(self.Conv2DTranspose_params_list[:,0]),self.max_count(self.Conv2DTranspose_params_list[:,1]),self.max_count(self.Conv2DTranspose_params_list[:,2]),self.max_count(self.Conv2DTranspose_params_list[:,3]),self.max_count(self.Conv2DTranspose_params_list[:,4]),self.max_count(self.Conv2DTranspose_params_list[:,5])]
+		self.UpSampling2D_params_list =[self.max_count(self.UpSampling2D_params_list[:,0]),self.max_count(self.UpSampling2D_params_list[:,1]),self.max_count(self.UpSampling2D_params_list[:,2])]
+		self.BatchNormalization_params_list = [self.max_count(self.BatchNormalization_params_list[:,0]),self.max_count(self.BatchNormalization_params_list[:,1])]
+		self.Dropout_params_list = [self.max_count(self.Dropout_params_list[:,0])]
+		self.SpatialDropout2D_params_list = [self.max_count(self.SpatialDropout2D_params_list[:,0]),self.max_count(self.SpatialDropout2D_params_list[:,1])]
+		self.MaxPooling2D_params_list = [self.max_count(self.MaxPooling2D_params_list[:,0]),self.max_count(self.MaxPooling2D_params_list[:,1]),self.max_count(self.MaxPooling2D_params_list[:,2]),self.max_count(self.MaxPooling2D_params_list[:,3])]
+		self.AveragePooling2D_params_list = [self.max_count(self.AveragePooling2D_params_list[:,0]),self.max_count(self.AveragePooling2D_params_list[:,1]),self.max_count(self.AveragePooling2D_params_list[:,2]),self.max_count(self.AveragePooling2D_params_list[:,3])]
+		#print(self.Conv2D_params_list)
 
-
-
+		self.best_params = [{'layer':'Conv2D',
+										'filters':int(self.Conv2D_params_list[0]),
+										'kernel_size':int(self.Conv2D_params_list[1]),
+										'strides':int(self.Conv2D_params_list[2]),
+										'padding':self.Conv2D_params_list[3],
+										'data_format':self.Conv2D_params_list[4],
+										'activation':self.Conv2D_params_list[5]
+										},
+										 {'layer':'SeparableConv2D',
+										'filters':int(self.Conv2D_params_list[0]),
+										'kernel_size':int(self.Conv2D_params_list[1]),
+										'strides':int(self.Conv2D_params_list[2]),
+										'padding':self.Conv2D_params_list[3],
+										'data_format':self.Conv2D_params_list[4],
+										'activation':self.Conv2D_params_list[5]
+										},
+										 {'layer':'Conv2DTranspose',
+										'filters':int(self.Conv2D_params_list[0]),
+										'kernel_size':int(self.Conv2D_params_list[1]),
+										'strides':int(self.Conv2D_params_list[2]),
+										'padding':self.Conv2D_params_list[3],
+										'data_format':self.Conv2D_params_list[4],
+										'activation':self.Conv2D_params_list[5]
+										},
+										{'layer':'UpSampling2D',
+										'size':int(self.UpSampling2D_params_list[0]),
+										'data_format':self.UpSampling2D_params_list[1],
+										'interpolation':self.UpSampling2D_params_list[2]
+										},
+										{'layer':'MaxPooling2D',
+										'pool_size':int(self.MaxPooling2D_params_list[0]),
+										'strides':int(self.MaxPooling2D_params_list[1]),
+										'padding':self.MaxPooling2D_params_list[2],
+										'data_format':self.MaxPooling2D_params_list[3],
+										},
+										{'layer':'AveragePooling2D',
+										'pool_size':int(self.AveragePooling2D_params_list[0]),
+										'strides':int(self.AveragePooling2D_params_list[1]),
+										'padding':self.AveragePooling2D_params_list[2],
+										'data_format':self.AveragePooling2D_params_list[3],
+										},
+										{'layer':'BatchNormalization',
+										'momentum':self.BatchNormalization_params_list[0],
+										'epsilon':self.BatchNormalization_params_list[1]
+										},
+										{'layer':'Dropout',
+										'rate':self.Dropout_params_list[0]
+										},
+										{'layer':'SpatialDropout2D',
+										'rate':float(self.SpatialDropout2D_params_list[0]),
+										'data_format':self.SpatialDropout2D_params_list[1]
+										}]
+		return self.best_params
 
 	def mutation(self,next_best_5):
 		#here the best 5 means next 5 after top 2 
@@ -265,11 +367,16 @@ class GA:
 		shuffle(next_best_5)
 		self.genome_1 = next_best_5[0]
 		self.genome_2 = next_best_5[1]
+		self.best_params_list = self.best_params(next_best_5)
+		#Code for the 19th person
+		for module in self.genome_1:
+			for gene in module:
+				
 
 		#Code for the 20th person!
 		self.mutated_layer_num = random.randint(0,len(self.genome_2))
 		self.mutated_layer = self.genome_2[self.mutated_layer_num]
-		print(self.mutated_layer)##For debugging
+		#print(self.mutated_layer)##For debugging
 		for i in self.mutated_layer:
 			for j in i:
 				if j == 'rate':
@@ -344,12 +451,12 @@ class GA:
 							break
 						else:
 							self.a = self.pickone(self.kernel_size_list)
-		print(self.mutated_layer)#For debugging
+		#print(self.mutated_layer)#For debugging
 		self.genome_2[self.mutated_layer_num] = self.mutated_layer
 
 		#self.genome_2 is ready!
 		#genome_1 is not yet ready
-		return genome_1,genome_2
+		return self.genome_1,self.genome_2
 
 	def init_population(self):
 		self.pop = []
@@ -369,6 +476,6 @@ a = GA(20,15,20,(640,420,3))
 best_5 = []
 for i in range(5):
 	best_5.append(a.init_genome())
-a.mutation(best_5)
+k,_ = a.mutation(best_5)
 #model = a.decode_genome(a.init_genome(),a.input_shape)
 #model.summary()
