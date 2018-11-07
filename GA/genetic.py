@@ -645,8 +645,6 @@ class GA:
 a = GA(20,15,(640,420,3))#Data is not given yet!
 
 members = a.init_population()
-with open('test.pkl','wb') as f:
-	pickle.dump(members,f)
 a.maintain_pop(members)
 #model = a.decode_genome(a.init_genome(),a.input_shape)
 #model.summary()
