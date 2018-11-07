@@ -5,6 +5,7 @@ from keras.models import Sequential,Model
 from keras.layers import Input,BatchNormalization,AveragePooling2D,GlobalMaxPooling2D,MaxPooling2D,GlobalAveragePooling2D
 import numpy as np 
 from collections import Counter
+import pickle
 
 seed =34
 random.seed(34)
@@ -13,7 +14,9 @@ random.seed(34)
 #these will be accessed on execution for mutation and crossover!
 
 class GA:
-	def __init__(self,max_conv_layers,max_convT_layers,max_individuals,input_shape,x_train,y_train,x_test,y_test,epochs):
+	def __init__(self,max_conv_layers,max_convT_layers,input_shape,max_individuals=20,x_train=None,y_train=None,x_test=None,y_test=None,epochs=5,max_generations=100):
+		self.max_generations = max_generations
+
 		self.x_train = x_train
 		self.y_train = y_train
 		self.x_test = x_test
@@ -40,7 +43,7 @@ class GA:
 		self.output_filter_depth_list = [2**i for i in range(1,11,1)] # assumeing channels last
 		self.kernel_size_list = [1,3,5,7,9,11]
 		self.strides_list = [1,2,3,4,5]
-		self.padding_list = ['"same"','"valid"'] #['same','valid']
+		self.padding_list = ['"same"']#['same','valid']
 		self.data_format_list = ['"channels_last"'] #['channels_last','channels_first']
 		self.interpolation_list =['"bilinear"','"nearest"'] 
 		self.momentum_list = [0.9,0.99,0.999]
@@ -219,7 +222,7 @@ class GA:
 			try:
 				print(self.commands[i])
 				exec(self.commands[i])
-			except ValueError :
+			except ValueError as e:
 				print('Error at layer ',i)### This is done like this to make the error easy to see in the terminal :-p
 				print('Error at layer ',i)
 				print('Error at layer ',i)
@@ -229,6 +232,10 @@ class GA:
 				print('Error at layer ',i)
 				print('Error at layer ',i)
 				print('Error at layer ',i)
+				print('\n')
+				print('This is the problematic command ')
+				print(self.commands[i])
+				print(e)
 				break
 			self.layer_count = i
 		#exec('self.model = Model(input=layer0,output=layer'+str(self.layer_count)+')')
@@ -481,39 +488,34 @@ class GA:
 
 		#self.genome_2 is ready!
 		#genome_1 is  ready
-		return self.genome_1,self.genome_2
+		return [self.genome_1,self.genome_2]
 
 	def _handle_broken_model(self, model, error):
-        del model
-        gc.collect()
-        if K.backend() == 'tensorflow':
-            K.clear_session()
-            tf.reset_default_graph()
+		del(model)
+		gc.collect()
+		if K.backend() == 'tensorflow':
+			K.clear_session()
+			tf.reset_default_graph()
+		print("An error occured and model couldnt train!")
+		print("Make sure the model can live within the computational resources available")
+		
 
-        print('An error occurred and the model could not train:')
-        print('\n')
-        print(error)
-        print('\n')
-        print(('Please ensure that your model'
-               'constraints live within your computational resources.'))
-
-	def evaluate_genome(self,model, epochs,Generation,individual):
-        loss, accuracy = None, None
-        try:
-            model.fit(self.x_train, self.y_train,
-                      validation_data=(self.x_test, self.y_test),
-                      epochs=epochs,
-                      verbose=1,
-                      callbacks=[
-                          EarlyStopping(monitor='val_loss',
-                                        patience=1,
-                                        verbose=1)
-                      ])
-            loss, accuracy = model.evaluate(self.x_test, self.y_test, verbose=0)
-        except Exception as e:
-            loss, accuracy = self._handle_broken_model(model, e)
-        self.name = 'generation-'+str(Generation)+'-individual-'+str(individual)
-        return [self.name,model, loss, accuracy]
+	def evaluate_genome(self,model, epochs,Generation,individual,genome):
+		self.loss,self.accuracy = None,None
+		self.name = 'generation-'+str(Generation)+'-individual-'+str(individual)
+		try:
+			model.fit(self.x_train,self.y_train,
+				validation_data=(self.x_test,self.y_test),
+				epochs=epochs,
+				verbose=1,
+				callbacks=[EarlyStopping(monitor='val_loss',
+										patience=1,
+										varbose=1)])
+			self.loss,self.accuracy = model.evaluate(self.x_test,self.y_test,verbose=0)
+		except Exception as e:
+			self.loss,self.accuracy = self._handle_broken_model(model,e)
+			return [self.name,genome,0,0,'ERROR',e]
+		return [self.name,genome,self.loss,self.accuracy]
 
 	def init_population(self):
 		self.pop = []
@@ -521,14 +523,48 @@ class GA:
 			self.pop.append(self.init_genome())
 		return self.pop
 
-	def maintain_pop(self,pop):
-		self.Generation = 1
-		self.pop = pop
+	def data_and_state_saver(self,score_lst,generation):
+		with open('pickle-of-list-@-Generation-'+str(generation)+'.pkl','wb') as fw:
+			pickle.dump(score_lst,fw)
+		print('pickle-of-list-@-Generation-'+str(generation)+'.pkl has been saved in instance storage')
+		with open('pickle-of-random-state-@-Generation'+str(generation)+'.pkl','wb') as ffw:
+			pickle.dump(random.getstate(),ffw)
+		print('pickle-of-random-state-@-Generation-'+str(generation)+'.pkl has been saved to instance storage')
+
+		''' Further set back the state using this random.setstate(state)'''
+
+	def load_state(self,file_to_generation,file_to_random_state):
+		self.a = file_to_generation.split('-')
+		self.generation=''
+		for i in self.a[-1]:
+			if i == '.':
+				break
+			else:
+				self.generation = self.generation+i
+		self.generation = int(self.generation)
+		with open(file_to_generation,'rb') as fw:
+			self.score_list= pickle.load(fw)
+		print('pickle-of-list-@-Generation-'+str(generation)+'.pkl has been loaded from instance storage')
+		with open(file_to_random_state,'rb') as ffw:
+			self.random_state = pickle.load(ffw)
+		print('pickle-of-random-state-@-Generation-'+str(generation)+'.pkl has been has been loaded from instance storage')
+
+		#Mutation and Crossover
+		self.crossed_breeds = self.crossover(self.scores_list[:2])
+		self.pop =[]
+		
+		for i in self.crossed_breeds:
+			self.pop.append(i)
+		self.mutated_mem = self.mutation(self.scores_list[2:7])
+		self.pop.append(self.mutated_mem[0])
+		self.pop.append(self.mutated_mem[1])
+		#Created 2nd generation!
+
 		while self.Generation <= self.max_generations:
-			print('Generation Count = ',i)
+			print('Generation Count = ',self.Generation)
 			self.scores = []
 			for i in range(len(self.pop)):
-				self.layer_count = self.decode_genome(i)
+				self.layer_count = self.decode_genome(self.pop[i],self.input_shape)
 				'''
 				include the data specific final layers using exec commands also take care of the layer number
 
@@ -540,18 +576,77 @@ class GA:
 				else:
 					self.sgd =keras.optimizers.SGD(lr=0.01, momentum=0.0, decay=0.0, nesterov=True)
 					self.model.compile(loss='binary_crossentropy',optimizer=self.sgd,metrics=['accuracy'])#loss is not defined!
-				self.scores.append(evaluate_genome(self.model,self.epochs,self.Generation,i))
-			self.best_7 = []
-			for i in self.scores:
-				pass #code the rest from here!
+				self.scores.append(evaluate_genome(self.model,self.epochs,self.Generation,i,self.pop[i]))#This is where the magic happens! Ta-da... ;-p
+			
+			self.scores = sorted(self.scores,key=self.take4thelem)#Here onwards the list is sorted!
+			#Saving everyone people!
+			self.data_saver(self.scores,self.Generation)
+
+			#Preprocessing and breeding for next generation!
+			self.crossed_breeds = self.crossover(self.scores[:2])
+			#Housekeeping
+			del(self.pop)
+			gc.collect()
+			self.pop =[]
+			#Mutation and Crossover
+			for i in self.crossed_breeds:
+				self.pop.append(i)
+			self.mutated_mem = self.mutation(self.scores[2:7])
+			self.pop.append(self.mutated_mem[0])
+			self.pop.append(self.mutated_mem[1])
+			#Created the next generation!
+			self.Generation = self.Generation + 1
+
+	def take4thelem(self,lst):
+		return lst[4]
+
+	def maintain_pop(self,pop):
+		self.Generation = 1
+		self.pop = pop
+		while self.Generation <= self.max_generations:
+			print('Generation Count = ',self.Generation)
+			self.scores = []
+			for i in range(len(self.pop)):
+				self.layer_count = self.decode_genome(self.pop[i],self.input_shape)
+				'''
+				include the data specific final layers using exec commands also take care of the layer number
+
+				'''
+				exec('self.model = Model(input=layer0,output=layer'+str(self.layer_count)+')')
+				if self.layer_count>20:
+					self.adm = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+					self.model.compile(loss='binary_crossentropy',optimizer=self.adm,metrics=['accuracy']) #loss is not defined
+				else:
+					self.sgd =keras.optimizers.SGD(lr=0.01, momentum=0.0, decay=0.0, nesterov=True)
+					self.model.compile(loss='binary_crossentropy',optimizer=self.sgd,metrics=['accuracy'])#loss is not defined!
+				self.scores.append(evaluate_genome(self.model,self.epochs,self.Generation,i,self.pop[i]))#This is where the magic happens! Ta-da... ;-p
+			
+			self.scores = sorted(self.scores,key=self.take4thelem)#Here onwards the list is sorted!
+			#Saving the top 7 people!
+			self.data_saver(self.scores,self.Generation)
+
+			#Preprocessing and breeding for next generation!
+			self.crossed_breeds = self.crossover(self.scores[:2])
+			#Housekeeping
+			del(self.pop)
+			gc.collect()
+			self.pop =[]
+			#Mutation and Crossover
+			for i in self.crossed_breeds:
+				self.pop.append(i)
+			self.mutated_mem = self.mutation(self.scores[2:7])
+			self.pop.append(self.mutated_mem[0])
+			self.pop.append(self.mutated_mem[1])
+			#Created 2nd generation!
 			self.Generation = self.Generation + 1
 
 
 			
-a = GA(20,15,20,(640,420,3))#Data is not given yet!
+a = GA(20,15,(640,420,3))#Data is not given yet!
 
 members = a.init_population()
+with open('test.pkl','wb') as f:
+	pickle.dump(members,f)
 a.maintain_pop(members)
-
 #model = a.decode_genome(a.init_genome(),a.input_shape)
 #model.summary()
